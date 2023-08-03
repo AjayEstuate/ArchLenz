@@ -11,6 +11,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.hive.service.cli.HiveSQLException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,66 +37,74 @@ public class ArchLensController {
 	@PostMapping("/data-source")
 	public ResponseEntity<?> addConfig(@RequestBody ExternalTableDataSource configData) {
 		try {
-			String respone = ArchLensService.addConfig(configData);
-			return new ResponseEntity<String>(respone, HttpStatus.CREATED);
+			String response = ArchLensService.addConfig(configData);
+			return new ResponseEntity<String>(response, HttpStatus.CREATED);
 		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
+		} catch (IllegalArgumentException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
-
 	}
 
 	@GetMapping("/data-sources")
-	public List getDataSources() {
-		List<String> ds = null;
+	public ResponseEntity<?> getDataSources() {
 		try {
-			ds = ArchLensService.getJsonKeysFromFile();
+			List<String> ds = ArchLensService.getJsonKeysFromFile();
+			List<Map<String, String>> mapList = ArchLensService.convertListToMap(ds, "dataSource");
+			List list = new ArrayList<>();
+			for (Map<String, String> map : mapList) {
+				list.add(map);
+			}
+			return new ResponseEntity<List>(list, HttpStatus.CREATED);
+		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
-		List<Map<String, String>> mapList = ArchLensService.convertListToMap(ds, "dataSource");
-		List list = new ArrayList<>();
-		for (Map<String, String> map : mapList) {
-			list.add(map);
-		}
-		return list;
 
 	}
 
 	@GetMapping("/schemas")
-	public List getSchemas(String dataSource) {
-		List<String> schemas = null;
+	public ResponseEntity<?> getSchemas(String dataSource) {
 		try {
-			schemas = ExternalTableConfig.getSchemas(dataSource);
-		} catch (SQLException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			List<String> schemas = ExternalTableConfig.getSchemas(dataSource);
+			List<Map<String, String>> mapList = ArchLensService.convertListToMap(schemas, "schema");
+			List list = new ArrayList<>();
+			for (Map<String, String> map : mapList) {
+				list.add(map);
+			}
+			return new ResponseEntity<List>(list, HttpStatus.CREATED);
+		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
-		List<Map<String, String>> mapList = ArchLensService.convertListToMap(schemas, "schema");
-		List list = new ArrayList<>();
-		for (Map<String, String> map : mapList) {
-			list.add(map);
-		}
-		return list;
 	}
 
 	@GetMapping("/tables")
-	public List getTables(String dataSource, String schema) {
-		List<String> tables = null;
+	public ResponseEntity<?> getTables(String dataSource, String schema) {
 		try {
+			List<String> tables = null;
 			tables = ExternalTableConfig.getTables(dataSource, schema);
-		} catch (SQLException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			List<Map<String, String>> mapList = ArchLensService.convertListToMap(tables, "table");
+			List list = new ArrayList<>();
+			for (Map<String, String> map : mapList) {
+				list.add(map);
+			}
+			return new ResponseEntity<List>(list, HttpStatus.CREATED);
+		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
-		List<Map<String, String>> mapList = ArchLensService.convertListToMap(tables, "table");
-		List list = new ArrayList<>();
-		for (Map<String, String> map : mapList) {
-			list.add(map);
-		}
-		return list;
 	}
 
 	@GetMapping(value = "/view", produces = MediaType.ALL_VALUE)
@@ -103,19 +112,19 @@ public class ArchLensController {
 			String fileName, String idName, String idVal, HttpServletResponse response) {
 		try {
 			idVal = URLEncoder.encode(idVal, StandardCharsets.UTF_8.toString());
-		} catch (UnsupportedEncodingException e) {
-
-			e.printStackTrace();
-		}
-
-		try {
 			ArchLensService.viewBlobData(dataSource, schema, table, blobColName, fileName, idName, idVal, response);
 
 			return new ResponseEntity<String>("", HttpStatus.OK);
-		} catch (SQLException c) {
-			return new ResponseEntity<String>(c.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (IOException p) {
-			return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (UnsupportedEncodingException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}  catch (HiveSQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 
 	}
@@ -125,29 +134,33 @@ public class ArchLensController {
 			String fileName, String idName, String idVal, HttpServletResponse response) {
 
 		try {
-			System.out.println("dataSource"+dataSource);
+			System.out.println("dataSource" + dataSource);
 			String result = ArchLensService.downloadFile(dataSource, schema, table, blobColName, fileName, idName,
 					idVal, response);
 			return new ResponseEntity<String>(result, HttpStatus.OK);
-		} catch (SQLException c) {
-			return new ResponseEntity<String>(c.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (IOException p) {
-			return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
 
-//	@GetMapping(value = "/custom", produces = MediaType.ALL_VALUE)
-//	public ResponseEntity<?> customQuery(String datasource, String schema, String blobColName, String fileName,
-//			String query, HttpServletResponse response) {
-//		try {
-//			System.out.println("API Hitted");
-//			String result = ArchLensService.downloadFile(datasource, schema, blobColName, fileName, query, response);
-//			return new ResponseEntity<String>(result, HttpStatus.OK);
-//		} catch (SQLException c) {
-//			return new ResponseEntity<String>(c.getMessage(), HttpStatus.BAD_REQUEST);
-//		} catch (IOException p) {
-//			return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
-//		}
-//	}
+	// @GetMapping(value = "/custom", produces = MediaType.ALL_VALUE)
+	// public ResponseEntity<?> customQuery(String datasource, String schema, String
+	// blobColName, String fileName,
+	// String query, HttpServletResponse response) {
+	// try {
+	// System.out.println("API Hitted");
+	// String result = ArchLensService.downloadFile(datasource, schema, blobColName,
+	// fileName, query, response);
+	// return new ResponseEntity<String>(result, HttpStatus.OK);
+	// } catch (SQLException c) {
+	// return new ResponseEntity<String>(c.getMessage(), HttpStatus.BAD_REQUEST);
+	// } catch (IOException p) {
+	// return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
+	// }
+	// }
 
 }

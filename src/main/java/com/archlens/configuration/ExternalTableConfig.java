@@ -1,6 +1,5 @@
 package com.archlens.configuration;
 
-import java.awt.print.Printable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -12,10 +11,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hive.service.cli.HiveSQLException;
+
 import com.archlens.security.ArchLensSecurity;
 import com.archlens.service.ArchLensService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 //@Configuration
 public class ExternalTableConfig {
@@ -65,7 +67,7 @@ public class ExternalTableConfig {
 
 		JsonNode dataSource = rootNode.get(config);
 		if (dataSource == null) {
-			throw new IOException("Invalid Configuration");
+			throw new IOException(config + " Data Source not found");
 		}
 
 		connectionURL = dataSource.get("connectionURL").asText();
@@ -92,11 +94,10 @@ public class ExternalTableConfig {
 			}
 
 			return schemas;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return null;
+		} catch (SQLException s) {
+			s.printStackTrace();
+			throw new  SQLException(s.getMessage());
+		} 
 	}
 
 	public static List<Object> getTables(Connection connection) throws SQLException {
@@ -123,7 +124,7 @@ public class ExternalTableConfig {
 		return tables;
 	}
 
-	public static List<String> getTables(String config, String schema) throws SQLException, IOException {
+	public static List<String> getTables(String config, String schema) throws Exception {
 		String query = "SHOW Tables";
 
 		String connectionURL = null, username = null, password = null;
@@ -143,7 +144,7 @@ public class ExternalTableConfig {
 		// password
 		JsonNode dataSource = rootNode.get(config);
 		if (dataSource == null) {
-			throw new IOException("Invalid Configuration");
+			throw new IOException(config + " Data Source not found");
 		}
 
 		connectionURL = dataSource.get("connectionURL").asText();
@@ -173,14 +174,18 @@ public class ExternalTableConfig {
 			}
 			return tables;
 
+		} catch (SQLException s) {
+			s.printStackTrace();
+			throw new  SQLException(s.getMessage());
 		} catch (Exception e) {
 			e.printStackTrace();
+			throw new  Exception(e.getMessage());
 		}
-		return null;
+
 	}
 
 	public static List<Object> createConnection(String config, String schema, String table, String blobColName,
-			String fileName, String idName, String idVal) throws IOException, SQLException {
+			String fileName, String idName, String idVal) throws  Exception {
 
 		String connectionURL = null, username = null, password = null;
 
@@ -224,11 +229,11 @@ public class ExternalTableConfig {
 
 			connection = DriverManager.getConnection(url, username, password);
 
-			List<Object> schemas = getSchemas(connection);
-
-			if (!(schemas.contains(schema))) {
-				throw new SQLException("Schema not found");
-			}
+//			List<Object> schemas = getSchemas(connection);
+//
+//			if (!(schemas.contains(schema))) {
+//				throw new SQLException("Schema not found");
+//			}
 
 			// Appending Schema To Connection URL to Access Specific DataBase
 			url = url + "/" + schema;
@@ -236,11 +241,11 @@ public class ExternalTableConfig {
 
 			List<Object> tables = getTables(connection);
 
-			if (!(tables.contains(table))) {
-				throw new SQLException("Table not found");
-			} else {
-
-			}
+//			if (!(tables.contains(table))) {
+//				throw new SQLException("Table not found");
+//			} else {
+//
+//			}
 
 			Statement stmt = connection.createStatement();
 			result = stmt.executeQuery(query);
@@ -248,27 +253,31 @@ public class ExternalTableConfig {
 			while (result.next()) {
 				Object data = result.getObject(blobColName);
 				String obtainedFileName = result.getString(fileName);
-//				System.out.println("data ->" + data);
-//				System.out.println("obtainedFileName---> " + obtainedFileName);
-
 				blobData.add(data);
 				blobData.add(obtainedFileName);
 			}
+		} 
+//		catch (AnalysisException   e) {
+//			e.printStackTrace();
+//			throw new AnalysisException( e.getMessage(), null);
+//
+//		}
+		catch (HiveSQLException   e) {
+			e.printStackTrace();
+			throw new HiveSQLException( e.getMessage());
+//			throw new AnalysisException( e.getMessage(), null);
+
+		}catch (SQLException   e) {
+			e.printStackTrace();
+			throw new SQLException( e.getMessage());
+
 		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Exception( e.getMessage());
 
-			if (connection == null) {
-				throw new SQLException("Connection Refused : \n" + e.getMessage());
-			} else if (result == null) {
-				throw new SQLException("Failed to query data : \n" + e.getMessage());
-			} else {
-				e.printStackTrace();
-				throw new SQLException("Something went wrong : \n" + e.getMessage());
-			}
-
-		} finally {
+		}  finally {
 			connection.close();
 		}
-//		System.out.println("blobData" + blobData);
 		return blobData;
 	}
 
@@ -401,9 +410,9 @@ public class ExternalTableConfig {
 
 		List<Object> schemas = getSchemas(connection);
 
-		if (!(schemas.contains(schema))) {
-			throw new SQLException("Schema not found");
-		}
+//		if (!(schemas.contains(schema))) {
+//			throw new SQLException("Schema not found");
+//		}
 		// Appending Schema To Connection URL to Access Specific DataBase
 		url = url + "/" + schema;
 		connection = DriverManager.getConnection(url, username, password);

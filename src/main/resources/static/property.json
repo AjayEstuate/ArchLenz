@@ -8,5 +8,10 @@
     "connectionURL" : "jdbc:hive2://192.168.0.112:10000",
     "username" : "TnubMuz/7HVAeBHrf4FTUaw420NsjxpFuX3HXylS+5s=",
     "password" : "HSd65nRmBFJbRnTCNUcqoNZJCZjffTuGaMOj4SQskMI="
+  },
+  "ds3" : {
+    "connectionURL" : "jdbc:hive2://192.168.33.82:10000",
+    "username" : "smAmUrW1cIz6xtl7BtDnuGKWtIWpZGKVn+67oEBypMY=",
+    "password" : "QprEznrnlFs3Al1Z6PUqlCEqjh6RUKLmMGUt6shIAQg="
   }
 }
