@@ -1,0 +1,12 @@
+{
+  "ds1" : {
+    "connectionURL" : "jdbc:hive2://192.168.33.82:10000",
+    "username" : "yseSxQ4KsKCHZAp/SyS2RqsUocyLBFBTM9dTXXQ7VLQ=",
+    "password" : "0el2+J/MMNM1OrYePRMs4XgY/KDxDLKZdsp7AexzG0s="
+  },
+  "ds2" : {
+    "connectionURL" : "jdbc:hive2://192.168.0.112:10000",
+    "username" : "TnubMuz/7HVAeBHrf4FTUaw420NsjxpFuX3HXylS+5s=",
+    "password" : "HSd65nRmBFJbRnTCNUcqoNZJCZjffTuGaMOj4SQskMI="
+  }
+}
