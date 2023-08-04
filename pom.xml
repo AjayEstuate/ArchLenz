@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.estuate</groupId>
-	<artifactId>Archlens</artifactId>
+	<artifactId>ArchLenz</artifactId>
 	<packaging>war</packaging>
 
 	<name>arch-lens</name>

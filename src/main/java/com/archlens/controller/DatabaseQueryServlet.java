@@ -88,11 +88,14 @@ public class DatabaseQueryServlet extends HttpServlet {
 
 					if (i == columnNum) {
 
-						if (table != null && blobColumn != null && fileName != null && idName != null) {
-							String viewAPI = "/view?dataSource=" + dataSource + "&schema=" + schema + "&table=" + table
+						if (fileName == null) {
+							fileName = blobColumn + "_filename";
+						}
+						if (table != null && idName != null) {
+							String viewAPI = "/ArchLenz/view?dataSource=" + dataSource + "&schema=" + schema + "&table=" + table
 									+ "&blobColName=" + blobColumn + "&fileName=" + fileName + "&idName=" + idName
 									+ "&idVal=" + idVal;
-							String downloadAPI = "/download?dataSource=" + dataSource + "&schema=" + schema + "&table="
+							String downloadAPI = "/ArchLenz/download?dataSource=" + dataSource + "&schema=" + schema + "&table="
 									+ table + "&blobColName=" + blobColumn + "&fileName=" + fileName + "&idName="
 									+ idName + "&idVal=" + idVal;
 

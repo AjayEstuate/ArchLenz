@@ -51,13 +51,8 @@ public class ArchLensController {
 	@GetMapping("/data-sources")
 	public ResponseEntity<?> getDataSources() {
 		try {
-			List<String> ds = ArchLensService.getJsonKeysFromFile();
-			List<Map<String, String>> mapList = ArchLensService.convertListToMap(ds, "dataSource");
-			List list = new ArrayList<>();
-			for (Map<String, String> map : mapList) {
-				list.add(map);
-			}
-			return new ResponseEntity<List>(list, HttpStatus.CREATED);
+			List<Map<String, String>> dataSource = ArchLensService.getConnectionUrlsFromJsonFile();
+			return new ResponseEntity<List>(dataSource, HttpStatus.CREATED);
 		} catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
@@ -78,7 +73,9 @@ public class ArchLensController {
 				list.add(map);
 			}
 			return new ResponseEntity<List>(list, HttpStatus.CREATED);
-		} catch (SQLException e) {
+		} catch (ClassNotFoundException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -98,6 +95,29 @@ public class ArchLensController {
 				list.add(map);
 			}
 			return new ResponseEntity<List>(list, HttpStatus.CREATED);
+		} catch (SQLException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (IOException e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	
+	@GetMapping(value = "/columns")
+	public ResponseEntity<?> viewColumn(String dataSource, String schema, String table) {
+
+		try {
+			List columns = ArchLensService.viewColumn(dataSource, schema, table);
+			
+			List<Map<String, String>> mapList = ArchLensService.convertListToMap(columns, "column");
+			List list = new ArrayList<>();
+			for (Map<String, String> map : mapList) {
+				list.add(map);
+			}
+			
+			return new ResponseEntity<List<String>>(list, HttpStatus.OK);
 		} catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
@@ -134,7 +154,7 @@ public class ArchLensController {
 			String fileName, String idName, String idVal, HttpServletResponse response) {
 
 		try {
-			System.out.println("dataSource" + dataSource);
+			idVal = URLEncoder.encode(idVal, StandardCharsets.UTF_8.toString());
 			String result = ArchLensService.downloadFile(dataSource, schema, table, blobColName, fileName, idName,
 					idVal, response);
 			return new ResponseEntity<String>(result, HttpStatus.OK);
@@ -162,5 +182,9 @@ public class ArchLensController {
 	// return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
 	// }
 	// }
+
+
+	
+
 
 }

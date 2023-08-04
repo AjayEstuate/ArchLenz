@@ -48,7 +48,7 @@ public class ExternalTableConfig {
 		return null;
 	}
 
-	public static List<String> getSchemas(String config) throws SQLException, IOException {
+	public static List<String> getSchemas(String config) throws SQLException, IOException, ClassNotFoundException {
 
 		String query = "SHOW SCHEMAS";
 		String connectionURL = null, username = null, password = null;
@@ -79,6 +79,7 @@ public class ExternalTableConfig {
 		password = ArchLensSecurity.decrypt(password);
 
 		try {
+			Class.forName("org.apache.hive.jdbc.HiveDriver");
 			Connection connection = DriverManager.getConnection(connectionURL, username, password);
 			Statement stmt = connection.createStatement();
 			ResultSet resultSet = stmt.executeQuery(query);
@@ -423,5 +424,7 @@ public class ExternalTableConfig {
 		return result;
 
 	}
+	
+	
 
 }
