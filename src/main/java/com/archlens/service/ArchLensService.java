@@ -44,7 +44,7 @@ public class ArchLensService {
 	// For Local
 	public static String DATA_SOURCE = "src/main/resources/static/property.json";
 
-	/// var/lib/tomcat/webapps/ArchLenz/WEB-INF/classes/static
+//	public static String DATA_SOURCE = "/var/lib/tomcat/webapps/ArchLenz/WEB-INF/classes/static/property.json";
 	// To Deploy
 	// public static String DATA_SOURCE = System.getProperty("user.dir") +
 	/// "\\WEB-INF\\classes\\static\\property.json";
@@ -128,8 +128,8 @@ public class ArchLensService {
 					if (dsNode.has("connectionURL")) {
 						String connectionURL = dsNode.get("connectionURL").asText();
 						Map<String, String> dataSourceInfo = new HashMap<>();
-						dataSourceInfo.put("Data Source", key);
-						dataSourceInfo.put("Connection URL", connectionURL);
+						dataSourceInfo.put("dataSource", key);
+						dataSourceInfo.put("connectionURL", connectionURL);
 						result.add(dataSourceInfo);
 					} else {
 						throw new IOException("The 'connectionURL' property is missing for key: " + key);
