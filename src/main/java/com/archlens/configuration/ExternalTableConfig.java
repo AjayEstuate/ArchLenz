@@ -12,43 +12,62 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hive.service.cli.HiveSQLException;
+import org.slf4j.Logger;
 
+import com.archlens.App;
 import com.archlens.security.ArchLensSecurity;
 import com.archlens.service.ArchLensService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 //@Configuration
 public class ExternalTableConfig {
 
+	static Logger log = App.log;
+
 	static String filePath = ArchLensService.DATA_SOURCE;
 
-	public static List<Object> getSchemas(Connection connection) throws SQLException {
+	// Method to Get a list of schemas present in Data Source
+	public static List<Object> getSchemas(Connection connection) throws Exception {
 
 		String query = "SHOW SCHEMAS";
 
+		List schemas = null;
+
 		try {
+
 			Statement stmt = connection.createStatement();
+			log.info("Excecuting query : " + query);
 			ResultSet resultSet = stmt.executeQuery(query);
+
 			ResultSetMetaData metadata = resultSet.getMetaData();
 			int columnCount = metadata.getColumnCount();
 
-			List schemas = new ArrayList<Object>();
+			schemas = new ArrayList<Object>();
 			while (resultSet.next()) {
 				for (int i = 1; i <= columnCount; i++) {
 					Object value = resultSet.getObject(i);
 					schemas.add(value);
 				}
 			}
-			return schemas;
-		} catch (Exception e) {
+
+		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
+			throw new SQLException(e.getMessage());
+		} catch (Exception e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new Exception(e.getMessage());
 		}
-		return null;
+		log.info("Successfully fetched the SCHEMAS present in Data Source");
+		return schemas;
 	}
 
-	public static List<String> getSchemas(String config) throws SQLException, IOException, ClassNotFoundException {
+	// Method to Get a list of schemas present in Data Source
+	public static List<String> getSchemas(String dataSource) throws SQLException, IOException, ClassNotFoundException {
 
 		String query = "SHOW SCHEMAS";
 		String connectionURL = null, username = null, password = null;
@@ -62,17 +81,21 @@ public class ExternalTableConfig {
 			rootNode = objectMapper.readTree(new File(filePath));
 
 		} catch (IOException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			throw new IOException("Failed to read property.json");
 		}
 
-		JsonNode dataSource = rootNode.get(config);
-		if (dataSource == null) {
-			throw new IOException(config + " Data Source not found");
+		JsonNode dataSourceNode = rootNode.get(dataSource);
+		
+		if (dataSourceNode == null) {
+			throw new IOException(dataSource + " Data Source not found");
 		}
 
-		connectionURL = dataSource.get("connectionURL").asText();
-		username = dataSource.get("username").asText();
-		password = dataSource.get("password").asText();
+		connectionURL = dataSourceNode.get("connectionURL").asText();
+		username = dataSourceNode.get("username").asText();
+		password = dataSourceNode.get("password").asText();
 
 		// Decrypting UserName and Password
 		username = ArchLensSecurity.decrypt(username);
@@ -81,8 +104,11 @@ public class ExternalTableConfig {
 		try {
 			Class.forName("org.apache.hive.jdbc.HiveDriver");
 			Connection connection = DriverManager.getConnection(connectionURL, username, password);
+			log.info("Successfully created connection to : " + connectionURL);
 			Statement stmt = connection.createStatement();
+			log.info("Excecuting query : " + query);
 			ResultSet resultSet = stmt.executeQuery(query);
+
 			ResultSetMetaData metadata = resultSet.getMetaData();
 			int columnCount = metadata.getColumnCount();
 
@@ -95,18 +121,22 @@ public class ExternalTableConfig {
 			}
 
 			return schemas;
-		} catch (SQLException s) {
-			s.printStackTrace();
-			throw new  SQLException(s.getMessage());
-		} 
+		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new SQLException(e.getMessage());
+		}
 	}
 
-	public static List<Object> getTables(Connection connection) throws SQLException {
+	public static List<Object> getTables(Connection connection) throws Exception {
 		String query = "SHOW Tables";
 		List<Object> tables = new ArrayList<Object>();
 		try {
 			Statement stmt = connection.createStatement();
+			log.info("Excecuting query : " + query);
 			ResultSet resultSet = stmt.executeQuery(query);
+
 			ResultSetMetaData metadata = resultSet.getMetaData();
 			int columnCount = metadata.getColumnCount();
 
@@ -119,12 +149,22 @@ public class ExternalTableConfig {
 				}
 			}
 
-		} catch (Exception e) {
+		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
+			throw new SQLException(e.getMessage());
+		} catch (Exception e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new Exception(e.getMessage());
 		}
+		log.info("Successfully fetched the Tables present in Schema");
 		return tables;
 	}
 
+// 	Method to get a list Tables present in Schema
 	public static List<String> getTables(String config, String schema) throws Exception {
 		String query = "SHOW Tables";
 
@@ -137,6 +177,9 @@ public class ExternalTableConfig {
 		try {
 			rootNode = objectMapper.readTree(new File(filePath));
 		} catch (IOException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			throw new IOException("Failed to read property.json");
 
 		}
@@ -159,7 +202,9 @@ public class ExternalTableConfig {
 
 		try {
 			Connection connection = DriverManager.getConnection(connectionURL, username, password);
+			log.info("Successfully created connection to : " + connectionURL);
 			Statement stmt = connection.createStatement();
+			log.info("Excecuting query : " + query);
 			ResultSet resultSet = stmt.executeQuery(query);
 			ResultSetMetaData metadata = resultSet.getMetaData();
 			int columnCount = metadata.getColumnCount();
@@ -175,18 +220,23 @@ public class ExternalTableConfig {
 			}
 			return tables;
 
-		} catch (SQLException s) {
-			s.printStackTrace();
-			throw new  SQLException(s.getMessage());
-		} catch (Exception e) {
+		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
-			throw new  Exception(e.getMessage());
+			throw new SQLException(e.getMessage());
+		} catch (Exception e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new Exception(e.getMessage());
 		}
 
 	}
 
+//	Method to Create a Connection to a Schema and Return a Blob Content and File Name 
 	public static List<Object> createConnection(String config, String schema, String table, String blobColName,
-			String fileName, String idName, String idVal) throws  Exception {
+			String fileName, String idName, String idVal) throws Exception {
 
 		String connectionURL = null, username = null, password = null;
 
@@ -200,6 +250,9 @@ public class ExternalTableConfig {
 			rootNode = objectMapper.readTree(new File(filePath));
 
 		} catch (IOException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			throw new IOException("Failed to read property.json");
 		}
 
@@ -219,34 +272,23 @@ public class ExternalTableConfig {
 
 		String query = "Select * From " + table + " where " + idName + " = " + idVal;
 
-		System.out.println("Excecuted Query to fetch BLOB content, " + query);
-
 		List<Object> blobData = new ArrayList<Object>();
-
+		Class.forName("org.apache.hive.jdbc.HiveDriver");
 		Connection connection = null;
 		ResultSet result = null;
 		try {
 			String url = connectionURL; // + "/"+ schema;
 
 			connection = DriverManager.getConnection(url, username, password);
-
-//			List<Object> schemas = getSchemas(connection);
-//
-//			if (!(schemas.contains(schema))) {
-//				throw new SQLException("Schema not found");
-//			}
+			
 
 			// Appending Schema To Connection URL to Access Specific DataBase
 			url = url + "/" + schema;
+
 			connection = DriverManager.getConnection(url, username, password);
+			log.info("Successfully created connection to : " + connectionURL);
 
 			List<Object> tables = getTables(connection);
-
-//			if (!(tables.contains(table))) {
-//				throw new SQLException("Table not found");
-//			} else {
-//
-//			}
 
 			Statement stmt = connection.createStatement();
 			result = stmt.executeQuery(query);
@@ -257,117 +299,39 @@ public class ExternalTableConfig {
 				blobData.add(data);
 				blobData.add(obtainedFileName);
 			}
+			
 		} 
-//		catch (AnalysisException   e) {
-//			e.printStackTrace();
-//			throw new AnalysisException( e.getMessage(), null);
-//
-//		}
-		catch (HiveSQLException   e) {
-			e.printStackTrace();
-			throw new HiveSQLException( e.getMessage());
-//			throw new AnalysisException( e.getMessage(), null);
 
-		}catch (SQLException   e) {
+		catch (HiveSQLException e) {
 			e.printStackTrace();
-			throw new SQLException( e.getMessage());
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new HiveSQLException(e.getMessage());
+
+		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
+			throw new SQLException(e.getMessage());
 
 		} catch (Exception e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
-			throw new Exception( e.getMessage());
-
-		}  finally {
-			connection.close();
-		}
-		return blobData;
-	}
-
-
-
-	public static List<Object> customQuery(String datasource, String schema, String blobColName, String fileName,
-			String query) throws IOException, SQLException {
-
-		String connectionURL = null, username = null, password = null;
-
-		// Create an ObjectMapper instance
-		ObjectMapper objectMapper = new ObjectMapper();
-
-		// Read the JSON file into a JsonNode object
-		JsonNode rootNode = null;
-
-		try {
-			rootNode = objectMapper.readTree(new File(filePath));
-
-		} catch (IOException e) {
-			throw new IOException("Failed to read property.json");
-		}
-
-		// Access each data source object and retrieve the connectionURL, username, and
-		// password
-		JsonNode dataSource = rootNode.get(datasource);
-		if (dataSource == null) {
-			throw new IOException(datasource + " Data Source not found");
-		}
-
-		connectionURL = dataSource.get("connectionURL").asText();
-		username = dataSource.get("username").asText();
-		password = dataSource.get("password").asText();
-
-		username = ArchLensSecurity.decrypt(username);
-		password = ArchLensSecurity.decrypt(password);
-
-		System.out.println("Excecuted Query to fetch BLOB content, " + query);
-
-		List<Object> blobData = new ArrayList<Object>();
-
-		Connection connection = null;
-		ResultSet result = null;
-		try {
-			String url = connectionURL; // + "/"+ schema;
-
-			connection = DriverManager.getConnection(url, username, password);
-
-			List<Object> schemas = getSchemas(connection);
-
-			if (!(schemas.contains(schema))) {
-				throw new SQLException(schema + " Schema not found in " + datasource);
-			}
-
-			// Appending Schema To Connection URL to Access Specific DataBase
-			url = url + "/" + schema;
-			connection = DriverManager.getConnection(url, username, password);
-
-			Statement stmt = connection.createStatement();
-			result = stmt.executeQuery(query);
-
-			while (result.next()) {
-				Object data = result.getObject(blobColName);
-				String file_name = result.getString(fileName);
-				blobData.add(data);
-				blobData.add(file_name);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-
-			if (connection == null) {
-				throw new SQLException("Connection Refused : \n" + e.getMessage());
-			} else if (result == null) {
-				throw new SQLException("Failed to query data : \n" + e.getMessage());
-			} else {
-				e.printStackTrace();
-				throw new SQLException("Something went wrong : \n" + e.getMessage());
-			}
+			throw new Exception(e.getMessage());
 
 		} finally {
-			if (connection != null) {
-				connection.close();
-			}
+			connection.close();
 		}
+		log.info("Successfully Fetched the BLob Content from table : "+table);
 		return blobData;
 	}
 
+
+
 	// ===============================================================================================================================
-	public static ResultSet getResultSet(String config, String schema, String query) throws IOException, SQLException {
+	public static ResultSet getResultSet(String config, String schema, String query) throws Exception {
 
 		String connectionURL = null, username = null, password = null;
 
@@ -381,6 +345,9 @@ public class ExternalTableConfig {
 			rootNode = objectMapper.readTree(new File(filePath));
 
 		} catch (IOException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			throw new IOException("Failed to read property.json");
 		}
 
@@ -398,7 +365,7 @@ public class ExternalTableConfig {
 		username = ArchLensSecurity.decrypt(username);
 		password = ArchLensSecurity.decrypt(password);
 
-		System.out.println("Excecuted Query to fetch BLOB content, " + query);
+		log.info("Excecuting query : " + query);
 
 		List<Object> blobData = new ArrayList<Object>();
 
@@ -411,12 +378,10 @@ public class ExternalTableConfig {
 
 		List<Object> schemas = getSchemas(connection);
 
-//		if (!(schemas.contains(schema))) {
-//			throw new SQLException("Schema not found");
-//		}
 		// Appending Schema To Connection URL to Access Specific DataBase
 		url = url + "/" + schema;
 		connection = DriverManager.getConnection(url, username, password);
+		log.info("Successfully created connection to : " + url);
 
 		Statement stmt = connection.createStatement();
 		result = stmt.executeQuery(query);
@@ -426,5 +391,93 @@ public class ExternalTableConfig {
 	}
 	
 	
+//	Method to run a Custom Query
+//	public static List<Object> customQuery(String datasource, String schema, String blobColName, String fileName,
+//	String query) throws IOException, SQLException, ClassNotFoundException {
+//
+//String connectionURL = null, username = null, password = null;
+//
+//// Create an ObjectMapper instance
+//ObjectMapper objectMapper = new ObjectMapper();
+//
+//// Read the JSON file into a JsonNode object
+//JsonNode rootNode = null;
+//
+//try {
+//	rootNode = objectMapper.readTree(new File(filePath));
+//
+//} catch (IOException e) {
+//	App.log.error(ArchLensService.writeExceptionInLog(e));
+//	App.log.error(e.getMessage());
+//	e.printStackTrace();
+//	throw new IOException("Failed to read property.json");
+//}
+//
+//// Access each data source object and retrieve the connectionURL, username, and
+//// password
+//JsonNode dataSource = rootNode.get(datasource);
+//if (dataSource == null) {
+//	throw new IOException(datasource + " Data Source not found");
+//}
+//
+//connectionURL = dataSource.get("connectionURL").asText();
+//username = dataSource.get("username").asText();
+//password = dataSource.get("password").asText();
+//
+//username = ArchLensSecurity.decrypt(username);
+//password = ArchLensSecurity.decrypt(password);
+//
+//System.out.println("Excecuted Query to fetch BLOB content, " + query);
+//
+//List<Object> blobData = new ArrayList<Object>();
+//
+//Class.forName("org.apache.hive.jdbc.HiveDriver");
+//Connection connection = null;
+//ResultSet result = null;
+//try {
+//	String url = connectionURL; // + "/"+ schema;
+//
+//	connection = DriverManager.getConnection(url, username, password);
+//
+//	List<Object> schemas = getSchemas(connection);
+//
+//	if (!(schemas.contains(schema))) {
+//		throw new SQLException(schema + " Schema not found in " + datasource);
+//	}
+//
+//	// Appending Schema To Connection URL to Access Specific DataBase
+//	url = url + "/" + schema;
+//	connection = DriverManager.getConnection(url, username, password);
+//
+//	Statement stmt = connection.createStatement();
+//	result = stmt.executeQuery(query);
+//
+//	while (result.next()) {
+//		Object data = result.getObject(blobColName);
+//		String file_name = result.getString(fileName);
+//		blobData.add(data);
+//		blobData.add(file_name);
+//	}
+//} catch (Exception e) {
+//	App.log.error(ArchLensService.writeExceptionInLog(e));
+//	App.log.error(e.getMessage());
+//	e.printStackTrace();
+//
+//	if (connection == null) {
+//		throw new SQLException("Connection Refused : \n" + e.getMessage());
+//	} else if (result == null) {
+//		throw new SQLException("Failed to query data : \n" + e.getMessage());
+//	} else {
+//		e.printStackTrace();
+//		throw new SQLException("Something went wrong : \n" + e.getMessage());
+//	}
+//
+//} finally {
+//	if (connection != null) {
+//		connection.close();
+//	}
+//}
+//return blobData;
+//}
 
 }

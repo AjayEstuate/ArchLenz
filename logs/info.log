@@ -1,0 +1,36 @@
+15:25:00.248 [main] INFO  com.archlens.App - Starting App using Java 17.0.7 on INDL-7924PW2 with PID 22548 (C:\Users\ADevaraju\Documents\ArchLenz\target\classes started by ADevaraju in C:\Users\ADevaraju\Documents\ArchLenz)
+15:25:00.250 [main] INFO  com.archlens.App - No active profile set, falling back to default profiles: default
+15:25:01.257 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+15:25:01.268 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+15:25:01.269 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+15:25:01.269 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.52]
+15:25:01.271 [main] INFO  o.a.c.core.AprLifecycleListener - Loaded Apache Tomcat Native library [2.0.4] using APR version [1.7.4].
+15:25:01.271 [main] INFO  o.a.c.core.AprLifecycleListener - APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+15:25:01.271 [main] INFO  o.a.c.core.AprLifecycleListener - APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+15:25:01.276 [main] INFO  o.a.c.core.AprLifecycleListener - OpenSSL successfully initialized [OpenSSL 3.0.9 30 May 2023]
+15:25:01.694 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+15:25:01.694 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1393 ms
+15:25:02.098 [main] INFO  o.s.j.d.e.EmbeddedDatabaseFactory - Starting embedded database: url='jdbc:derby:memory:2c79c3f8-dece-447e-b327-c4dc123e284d;create=true', username='sa'
+15:25:02.455 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+15:25:02.540 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path ''
+15:25:02.548 [main] INFO  com.archlens.App - Started App in 2.705 seconds (JVM running for 4.26)
+15:25:53.619 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.b.a.SpringApplicationAdminMXBeanRegistrar$SpringApplicationAdmin - Application shutdown requested.
+15:25:53.662 [RMI TCP Connection(4)-127.0.0.1] INFO  o.s.j.d.e.EmbeddedDatabaseFactory - Shutting down embedded database: url='jdbc:derby:memory:2c79c3f8-dece-447e-b327-c4dc123e284d;create=true'
+15:25:58.386 [main] INFO  com.archlens.App - Starting App using Java 17.0.7 on INDL-7924PW2 with PID 24520 (C:\Users\ADevaraju\Documents\ArchLenz\target\classes started by ADevaraju in C:\Users\ADevaraju\Documents\ArchLenz)
+15:25:58.388 [main] INFO  com.archlens.App - No active profile set, falling back to default profiles: default
+15:25:59.447 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8080 (http)
+15:25:59.458 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+15:25:59.459 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+15:25:59.459 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.52]
+15:25:59.460 [main] INFO  o.a.c.core.AprLifecycleListener - Loaded Apache Tomcat Native library [2.0.4] using APR version [1.7.4].
+15:25:59.460 [main] INFO  o.a.c.core.AprLifecycleListener - APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+15:25:59.461 [main] INFO  o.a.c.core.AprLifecycleListener - APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+15:25:59.466 [main] INFO  o.a.c.core.AprLifecycleListener - OpenSSL successfully initialized [OpenSSL 3.0.9 30 May 2023]
+15:25:59.800 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+15:25:59.800 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1357 ms
+15:26:00.263 [main] INFO  o.s.j.d.e.EmbeddedDatabaseFactory - Starting embedded database: url='jdbc:derby:memory:5c08f712-f210-4944-af52-d76a78299384;create=true', username='sa'
+15:26:00.639 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+15:26:00.744 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path ''
+15:26:00.754 [main] INFO  com.archlens.App - Started App in 2.829 seconds (JVM running for 4.505)
+15:27:03.985 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.b.a.SpringApplicationAdminMXBeanRegistrar$SpringApplicationAdmin - Application shutdown requested.
+15:27:04.031 [RMI TCP Connection(3)-127.0.0.1] INFO  o.s.j.d.e.EmbeddedDatabaseFactory - Shutting down embedded database: url='jdbc:derby:memory:5c08f712-f210-4944-af52-d76a78299384;create=true'

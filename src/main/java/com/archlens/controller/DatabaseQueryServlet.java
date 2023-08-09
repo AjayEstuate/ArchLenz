@@ -8,16 +8,21 @@ import java.sql.SQLException;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.archlens.App;
 import com.archlens.configuration.ExternalTableConfig;
+import com.archlens.service.ArchLensService;
 
 @Controller
 @CrossOrigin("*")
 public class DatabaseQueryServlet extends HttpServlet {
+	
+	static Logger log = App.log;
 
 	private static final long serialVersionUID = 1L;
 
@@ -25,8 +30,7 @@ public class DatabaseQueryServlet extends HttpServlet {
 	public ResponseEntity<?> query(String dataSource, String schema, String table, String blobColName, String fileName,
 			String idName, String query) {
 		try {
-			System.out.println("Processing query " + query);
-
+			log.info("Excecuting query : " + query);
 			ResultSet resultSet = ExternalTableConfig.getResultSet(dataSource, schema, query);
 			ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -83,7 +87,9 @@ public class DatabaseQueryServlet extends HttpServlet {
 							idVal = columnValue;
 						}
 					} catch (NullPointerException e) {
-
+						App.log.error(ArchLensService.writeExceptionInLog(e));
+						App.log.error(e.getMessage());
+						e.printStackTrace();
 					}
 
 					if (i == columnNum) {
@@ -103,8 +109,10 @@ public class DatabaseQueryServlet extends HttpServlet {
 							String download = "<a href=\"" + downloadAPI + "\" target=\"_blank\">Download</a>";
 
 							columnValue = view + "    " + download;
+							
 						} else {
-							columnValue = "Provide the table name, file name , blob value and ID name column name to view BLOB data.";
+							columnValue = "Provide the table name, file name amd ID name column name to view BLOB data.";
+							log.warn("Provide the table name, file name amd ID name column name to view BLOB data.");
 						}
 					}
 
@@ -117,15 +125,23 @@ public class DatabaseQueryServlet extends HttpServlet {
 			htmlOutput.append("</table>");
 			htmlOutput.append("</body></html>");
 
-			System.out.println("Query executed successfully. Results are shown");
+			log.info("Query executed successfully. Results are shown in browser");
 
 			return ResponseEntity.ok(htmlOutput.toString());
 
 		} catch (SQLException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.SC_NOT_FOUND).body(e.getMessage());
 		} catch (IOException e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.SC_NOT_FOUND).body(e.getMessage());
 		} catch (Exception e) {
+			App.log.error(ArchLensService.writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).body(e.getMessage());
 		}

@@ -8,30 +8,31 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.hive.service.cli.HiveSQLException;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
+import com.archlens.App;
 import com.archlens.configuration.ExternalTableConfig;
 import com.archlens.entity.ExternalTableDataSource;
 import com.archlens.security.ArchLensSecurity;
@@ -41,75 +42,36 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Component
 public class ArchLensService {
+
 	// For Local
-	public static String DATA_SOURCE = "src/main/resources/static/property.json";
+	// public static String DATA_SOURCE = "src/main/resources/static/property.json";
 
-//	public static String DATA_SOURCE = "/var/lib/tomcat/webapps/ArchLenz/WEB-INF/classes/static/property.json";
 	// To Deploy
-	// public static String DATA_SOURCE = System.getProperty("user.dir") +
-	/// "\\WEB-INF\\classes\\static\\property.json";
+	public static String DATA_SOURCE = "property.json";
 
-	// D:\apache-tomcat-9.0.68\bin\WEB-INF\classes\static\property.json
-	// D:\\apache-tomcat-9.0.68\\webapps\\blob\\WEB-INF\\classes\\static\\property.json";
-
-	// public static String DATA_SOURCE = getFilePath("property.json");
-
-	// public static String DATA_SOURCE =
-	// "D:\\apache-tomcat-9.0.68\\webapps\\blob\\WEB-INF\\classes\\static\\property.json";
-
-	public static String getFilePath(String fileName) {
-		// Create a ClassPathResource for the given file name.
-		Resource resource = new ClassPathResource("static/" + fileName);
-		String filePath = null;
-
-		// Get the input stream from the resource.
-		InputStream inputStream;
-		try {
-			inputStream = resource.getInputStream();
-			// Use the input stream as needed (e.g., read the content or process the data).
-			// You can choose to directly work with the input stream or get the file path
-			// from the resource description if needed.
-
-			// For example, if you want to read the content of the file:
-			byte[] fileContent = inputStream.readAllBytes();
-
-			// If you still need the file path as a string, you can get it from the resource
-			// description:
-			filePath = resource.getDescription();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return filePath;
+//	Method to Convert printStackTrace to String to write printStackTrace in error logs
+	public static String writeExceptionInLog(Exception e) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		String exceptionStackTrace = sw.toString();
+		return exceptionStackTrace;
 	}
 
-	//	public static List<String> getJsonKeysFromFile() throws Exception {
-	//		String filePath = ArchLensService.DATA_SOURCE;
-	//		List<String> keys = new ArrayList<>();
-	//
-	//		try {
-	//			File jsonFile = new File(filePath);
-	//			ObjectMapper objectMapper = new ObjectMapper();
-	//			JsonNode rootNode = objectMapper.readTree(jsonFile);
-	//
-	//			if (rootNode.isObject()) {
-	//				Iterator<String> fieldNames = rootNode.fieldNames();
-	//				while (fieldNames.hasNext()) {
-	//					String key = fieldNames.next();
-	//					keys.add(key);
-	//				}
-	//			} else {
-	//				System.out.println("The JSON in the file is not an object.");
-	//			}
-	//		} catch (IOException e) {
-	//			System.out.println("Error reading the JSON file: " + e.getMessage());
-	//			throw new Exception("Error reading the JSON file : " + e.getMessage());
-	//		}
-	//
-	//		return keys;
-	//	}
+//	Method to Create a properties.json file if not exist in Application Location i
+	public static void createJsonFile() throws IOException {
+		File file = new File("property.json");
+		if (file.createNewFile()) {
+			FileWriter writer = new FileWriter(file);
+			writer.write("{" + "}");
+			writer.close();
+			App.log.info("Successfully created Properties.json file.");
+		} else {
+			App.log.info("Properties.json already exists.");
+		}
+	}
 
+//	Method to get a list of Data Sources name and connection url 
 	public static List<Map<String, String>> getConnectionUrlsFromJsonFile() throws Exception {
 		String filePath = ArchLensService.DATA_SOURCE;
 		List<Map<String, String>> result = new ArrayList<>();
@@ -132,19 +94,25 @@ public class ArchLensService {
 						dataSourceInfo.put("connectionURL", connectionURL);
 						result.add(dataSourceInfo);
 					} else {
+						App.log.error(
+								"The 'connectionURL' property is missing in properties.json file for key: " + key);
 						throw new IOException("The 'connectionURL' property is missing for key: " + key);
 					}
 				}
 			} else {
+				App.log.error("The JSON in the file is not an object.");
 				throw new IOException("The JSON in the file is not an object.");
 			}
 		} catch (IOException e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error("Error reading the JSON file : " + e.getMessage());
 			throw new Exception("Error reading the JSON file : " + e.getMessage());
 		}
 
 		return result;
 	}
 
+//	Method to get a Extension from a file name
 	public static String getFileExtension(String fileName) {
 		if (fileName == null || fileName.isEmpty()) {
 			return "";
@@ -159,10 +127,10 @@ public class ArchLensService {
 		return fileName.substring(lastDotIndex + 1);
 	}
 
+//	List of a extension for  Viewable files in browser
 	public static List viewableFilesExtension() {
 		List<String> fileExtensions = new ArrayList<>();
-		//
-		// fileExtensions.add(".msg");
+
 		fileExtensions.add(".tif");
 		fileExtensions.add(".mp3");
 		fileExtensions.add(".html");
@@ -207,7 +175,20 @@ public class ArchLensService {
 		return mapList;
 	}
 
+	/*
+	 * Method to Add a Data Source in a Properties.Json file: When we tries to add a
+	 * Data source to a properties.json file first it will add to a
+	 * property_temp.json if exception occurs it will throw an error else it will
+	 * dumb a property_temp.json data to property.json Following this approach
+	 * because of following reason: While adding a data to a json file if exception
+	 * occurs it will add a { key , , to a json file and throws an error when we try
+	 * to add proper data next time to a json file previous special characters and
+	 * key will be there that will not allow to maintain a key : value pair
+	 */
 	public static String addConfig(ExternalTableDataSource configData) throws SQLException, Exception {
+
+		createJsonFile();
+
 		String dataSource = configData.getDataSource();
 		String host = configData.getHost();
 		String port = configData.getPort();
@@ -216,16 +197,14 @@ public class ArchLensService {
 
 		String connectionURL = "jdbc:hive2://" + host + ":" + port;
 		try {
+			Class.forName("org.apache.hive.jdbc.HiveDriver");
+
 			Connection connection = DriverManager.getConnection(connectionURL, userName, password);
-			// if (connection == null) {
-			// throw new SQLException("Connetion Refused");
-			// }
-			// try {
+
+			App.log.info("Successfully created connection to : " + connectionURL);
+
 			userName = ArchLensSecurity.encrypt(userName);
 			password = ArchLensSecurity.encrypt(password);
-			// } catch (Exception e) {
-			// e.printStackTrace();
-			// }
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode configNode = objectMapper.createObjectNode();
@@ -243,10 +222,9 @@ public class ArchLensService {
 					configNode.setAll((ObjectNode) existingConfig);
 				}
 			} catch (IOException e) {
+				App.log.error(writeExceptionInLog(e));
+				App.log.error(e.getMessage());
 				e.printStackTrace();
-				// System.err.println("Error while reading existing configurations from
-				// property.json");
-				// return "Failed to add the config.";
 				throw new IOException(e.getMessage());
 			}
 
@@ -259,11 +237,14 @@ public class ArchLensService {
 				FileWriter fileWriter = new FileWriter(tempFile);
 				objectMapper.writerWithDefaultPrettyPrinter().writeValue(fileWriter, configNode);
 				fileWriter.close();
-				System.out.println("DataSource configurations have been updated in property_temp.json.");
+				App.log.info("DataSource configurations have been updated in property_temp.json.");
 			} catch (IOException e) {
+				App.log.error(writeExceptionInLog(e));
+				App.log.error(e.getMessage());
+				App.log.error("Error while writing the configuration to property_temp.json");
+
 				e.printStackTrace();
-				System.err.println("Error while writing the configuration to property_temp.json");
-				return "Failed to add the config.";
+				throw new IOException("Error while writing the configuration to property_temp.json");
 			}
 
 			// Replace the original file with the temporary file
@@ -271,118 +252,38 @@ public class ArchLensService {
 			File configFile = new File(DATA_SOURCE);
 			try {
 				Files.move(tempFile.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				System.out.println("DataSource configurations have been added to property.json successfully!");
+				App.log.info("DataSource configurations have been added to property.json successfully!");
 			} catch (IOException e) {
+				App.log.error(writeExceptionInLog(e));
+				App.log.error(e.getMessage());
 				e.printStackTrace();
-				System.err.println("Failed to replace property.json with property_temp.json");
-				return "Failed to add the config.";
+
+				throw new IOException("Failed to add the config.");
 			}
+			App.log.info(dataSource + " Data source added successfully");
 			return dataSource + " Data source added successfully";
 
 		} catch (SQLException e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
+
 			e.printStackTrace();
 			throw new SQLException(e.getMessage());
 		} catch (IllegalArgumentException e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
 			throw new IllegalArgumentException(e.getMessage());
 		} catch (Exception e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
 			throw new Exception(e.getMessage());
 		}
 
 	}
-	// Method to add DataSource
-	// public static String addConfig(ExternalTableDataSource configData)
-	// throws SQLException, Exception, ConnectException {
-	// String dataSource = configData.getDataSource();
-	// String host = configData.getHost();
-	// String port = configData.getPort();
-	// String userName = configData.getUserName();
-	// String password = configData.getPassword();
-	//
-	// String connectionURL = "jdbc:hive2://" + host + ":" + port;
-	// try {
-	// Connection connection = DriverManager.getConnection(connectionURL, userName,
-	// password);
-	// if (connection == null) {
-	// throw new SQLException("Connetion Refused");
-	// }
-	// try {
-	// userName = ArchLensSecurity.encrypt(userName);
-	// password = ArchLensSecurity.encrypt(password);
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	//
-	// ObjectMapper objectMapper = new ObjectMapper();
-	// ObjectNode configNode = objectMapper.createObjectNode();
-	// ObjectNode connectionNode = objectMapper.createObjectNode();
-	//
-	// connectionNode.put("connectionURL", connectionURL);
-	// connectionNode.put("username", userName);
-	// connectionNode.put("password", password);
-	//
-	// // Read existing configurations from the file
-	// try {
-	// File configFile = new File(ArchLensService.DATA_SOURCE);
-	// if (configFile.exists()) {
-	// JsonNode existingConfig = objectMapper.readTree(configFile);
-	// configNode.setAll((ObjectNode) existingConfig);
-	// }
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// System.err.println("Error while reading existing configurations from
-	// property.json");
-	// return "Failed to add the config.";
-	// }
-	//
-	// // Add the new configuration to the existing ones
-	// configNode.set(dataSource, connectionNode);
-	//
-	// // Write all configurations to a temporary file
-	// try {
-	// File tempFile = new File("property_temp.json");
-	// FileWriter fileWriter = new FileWriter(tempFile);
-	// objectMapper.writerWithDefaultPrettyPrinter().writeValue(fileWriter,
-	// configNode);
-	// fileWriter.close();
-	// System.out.println("DataSource configurations have been updated in
-	// property_temp.json.");
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// System.err.println("Error while writing the configuration to
-	// property_temp.json");
-	// return "Failed to add the data source.";
-	// }
-	//
-	// // Replace the original file with the temporary file
-	// File tempFile = new File("property_temp.json");
-	// File configFile = new File(ArchLensService.DATA_SOURCE);
-	// try {
-	// Files.move(tempFile.toPath(), configFile.toPath(),
-	// StandardCopyOption.REPLACE_EXISTING);
-	// System.out.println("DataSource configurations have been added to
-	// property.json successfully!");
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// System.err.println("Failed to replace property.json with
-	// property_temp.json");
-	// return "Failed to add the Data Source.";
-	// }
-	// return dataSource + " Data source added successfully";
-	//
-	// } catch (SQLException e) {
-	// e.printStackTrace();
-	// throw new SQLException("Connetion Refused : " + e.getMessage());
-	// } catch (IllegalArgumentException e) {
-	// e.printStackTrace();
-	// throw new Exception("Connetion Refused : " + e.getMessage());
-	// }
-	//
-	// }
 
-	// Method to get a sub string (If file name is path: It will extract filename
-	// from path)
+//	If the File Name contains path this function will remove the paths and extract the file name in the path
 	public static String getSubstringAfterLastSlash(String filePath) {
 		int lastSlashIndex = filePath.lastIndexOf('/');
 
@@ -393,34 +294,7 @@ public class ArchLensService {
 		return "";
 	}
 
-	// // Method get a list of datasource
-	// public static List<String> getJsonKeysFromFile() throws Exception {
-	// String filePath = DATA_SOURCE;
-	// List<String> keys = new ArrayList<>();
-	//
-	// try {
-	// File jsonFile = new File(filePath);
-	// ObjectMapper objectMapper = new ObjectMapper();
-	// JsonNode rootNode = objectMapper.readTree(jsonFile);
-	//
-	// if (rootNode.isObject()) {
-	// Iterator<String> fieldNames = rootNode.fieldNames();
-	// while (fieldNames.hasNext()) {
-	// String key = fieldNames.next();
-	// keys.add(key);
-	// }
-	// } else {
-	// System.out.println("The JSON in the file is not an object.");
-	// }
-	// } catch (IOException e) {
-	// System.out.println("Error reading the JSON file: " + e.getMessage());
-	// throw new Exception("Error reading the JSON file : " + e.getMessage());
-	// }
-	//
-	// return keys;
-	// }
-
-	// Method to view Blob Data
+	// Method to view Blob Data in browser
 	public static void viewBlobData(String datasource, String schema, String table, String blobColName, String fileName,
 			String idName, String idVal, HttpServletResponse response) throws Exception {
 
@@ -448,10 +322,10 @@ public class ArchLensService {
 		}
 	}
 
-	// Method to download a Blob File
+	// Method to download a Blob File 
 	public static String downloadFile(String datasource, String schema, String table, String blobColName,
 			String fileName, String idName, String idVal, HttpServletResponse response)
-					throws IOException, HiveSQLException, SQLException, Exception {
+			throws IOException, HiveSQLException, SQLException, Exception {
 
 		List<Object> result = ExternalTableConfig.createConnection(datasource, schema, table, blobColName, fileName,
 				idName, idVal);
@@ -467,26 +341,9 @@ public class ArchLensService {
 
 		return downloadContent(content, obtainedFileName, response);
 
-		// if (content != null) {
-		// // Set response headers
-		// response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-		// response.setHeader("Content-Disposition", "attachment; filename=\"" +
-		// obtainedFileName + "\"");
-		//
-		// // Write the content directly to the response output stream
-		// OutputStream outputStream = response.getOutputStream();
-		// outputStream.write(content);
-		// outputStream.flush();
-		// outputStream.close();
-		// return obtainedFileName + " Downloaded Sucesfully!";
-		// } else {
-		// // File not found in the database
-		// response.sendError(HttpServletResponse.SC_NOT_FOUND);
-		// return null;
-		// }
-
 	}
-
+	
+// 	Method to read a Binary data and Convert it back to original format and view in browser 
 	public static void viewContent(byte[] content, HttpServletResponse response)
 			throws FileNotFoundException, IOException {
 
@@ -506,6 +363,7 @@ public class ArchLensService {
 
 	}
 
+// 	Method to read a Binary data and Convert it back to original format and Download a file 
 	public static String downloadContent(byte[] content, String file_name, HttpServletResponse response)
 			throws IOException {
 		if (content != null) {
@@ -527,39 +385,7 @@ public class ArchLensService {
 
 	}
 
-	// Custom Query
-	public static String downloadFile(String datasource, String schema, String blobColName, String file_name,
-			String query, HttpServletResponse response) throws IOException, SQLException {
-
-		List<Object> result = ExternalTableConfig.customQuery(datasource, schema, blobColName, file_name, query);
-		Object fileData = null;
-		String fileName = null;
-		try {
-			fileData = result.get(0);
-			fileName = (String) result.get(1);
-
-		} catch (IndexOutOfBoundsException e) {
-			// e.printStackTrace();
-		}
-		if (fileData == null || fileName == null) {
-			throw new SQLException("Failed to Query Data ");
-		} else if (fileName.contains("/")) {
-			fileName = getSubstringAfterLastSlash(fileName);
-		}
-
-		byte[] content = (byte[]) fileData;
-		// Set response headers
-		response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-		response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-
-		// Write the content directly to the response output stream
-		OutputStream outputStream = response.getOutputStream();
-		outputStream.write(content);
-		outputStream.flush();
-		outputStream.close();
-		return fileName + " Downloaded Sucesfully!";
-
-	}
+//	
 
 	public static List viewColumn(String dataSource, String schema, String table) throws Exception {
 
@@ -575,6 +401,8 @@ public class ArchLensService {
 			rootNode = objectMapper.readTree(new File(DATA_SOURCE));
 
 		} catch (IOException e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			throw new IOException("Failed to read property.json");
 		}
 
@@ -592,6 +420,7 @@ public class ArchLensService {
 		password = ArchLensSecurity.decrypt(password);
 
 		List<String> columnNames = new ArrayList<String>();
+		Set<String> columnNameSet = new HashSet<String>();
 
 		try {
 			Class.forName("org.apache.hive.jdbc.HiveDriver");
@@ -603,17 +432,63 @@ public class ArchLensService {
 			try (ResultSet resultSet = metaData.getColumns(null, null, table, null)) {
 				while (resultSet.next()) {
 					String columnName = resultSet.getString("COLUMN_NAME");
-					columnNames.add(columnName);
+					if (columnNameSet.add(columnName)) {
+						columnNames.add(columnName);
+					}
 				}
-				return columnNames;
+
 			}
+			return columnNames;
 		} catch (SQLException e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
 			throw new SQLException(e.getMessage());
 		} catch (Exception e) {
+			App.log.error(writeExceptionInLog(e));
+			App.log.error(e.getMessage());
 			e.printStackTrace();
 			throw new Exception(e.getMessage());
 		}
 	}
+	
+	
+	
+	// Custom Query
+//		public static String downloadFile(String datasource, String schema, String blobColName, String file_name,
+//				String query, HttpServletResponse response) throws IOException, SQLException, ClassNotFoundException {
+	//
+//			List<Object> result = ExternalTableConfig.customQuery(datasource, schema, blobColName, file_name, query);
+//			Object fileData = null;
+//			String fileName = null;
+//			try {
+//				fileData = result.get(0);
+//				fileName = (String) result.get(1);
+	//
+//			} catch (IndexOutOfBoundsException e) {
+//				App.log.error(writeExceptionInLog(e));
+//				App.log.error(e.getMessage());
+//				e.printStackTrace();
+	//
+//			}
+//			if (fileData == null || fileName == null) {
+//				throw new SQLException("Failed to Query Data ");
+//			} else if (fileName.contains("/")) {
+//				fileName = getSubstringAfterLastSlash(fileName);
+//			}
+	//
+//			byte[] content = (byte[]) fileData;
+//			// Set response headers
+//			response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+//			response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+	//
+//			// Write the content directly to the response output stream
+//			OutputStream outputStream = response.getOutputStream();
+//			outputStream.write(content);
+//			outputStream.flush();
+//			outputStream.close();
+//			return fileName + " Downloaded Sucesfully!";
+	//
+//		}
 
 }

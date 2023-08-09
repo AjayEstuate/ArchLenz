@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.archlens.App;
 import com.archlens.configuration.ExternalTableConfig;
 import com.archlens.entity.ExternalTableDataSource;
 import com.archlens.service.ArchLensService;
@@ -29,8 +30,11 @@ import com.archlens.service.ArchLensService;
 @CrossOrigin("*")
 public class ArchLensController {
 
+	
+
 	@GetMapping("/")
 	public String hello() {
+		App.log.info("Application is up and running.");
 		return "WELCOME TO ARCHLENS";
 	}
 
@@ -75,7 +79,7 @@ public class ArchLensController {
 			return new ResponseEntity<List>(list, HttpStatus.CREATED);
 		} catch (ClassNotFoundException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}catch (SQLException e) {
+		} catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -103,20 +107,20 @@ public class ArchLensController {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
-	
-	
+
 	@GetMapping(value = "/columns")
 	public ResponseEntity<?> viewColumn(String dataSource, String schema, String table) {
 
 		try {
 			List columns = ArchLensService.viewColumn(dataSource, schema, table);
-			
+			System.out.println(columns);
+
 			List<Map<String, String>> mapList = ArchLensService.convertListToMap(columns, "column");
 			List list = new ArrayList<>();
 			for (Map<String, String> map : mapList) {
 				list.add(map);
 			}
-			
+
 			return new ResponseEntity<List<String>>(list, HttpStatus.OK);
 		} catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -137,9 +141,9 @@ public class ArchLensController {
 			return new ResponseEntity<String>("", HttpStatus.OK);
 		} catch (UnsupportedEncodingException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}  catch (HiveSQLException e) {
+		} catch (HiveSQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}catch (SQLException e) {
+		} catch (SQLException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (IOException e) {
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -182,9 +186,5 @@ public class ArchLensController {
 	// return new ResponseEntity<String>(p.getMessage(), HttpStatus.BAD_REQUEST);
 	// }
 	// }
-
-
-	
-
 
 }

@@ -8,7 +8,12 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.slf4j.Logger;
+
 public class ArchLensSecurity {
+	
+	Logger log = org.slf4j.LoggerFactory.getLogger(ArchLensSecurity.class);
+	
 
 	private static final String AES_ALGORITHM = "AES";
 	private static final String AES_TRANSFORMATION = "AES/CBC/PKCS5Padding";
